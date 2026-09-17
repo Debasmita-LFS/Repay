@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Repayment calculator</title>
+<style>
+  :root {
+    --surface-2: #ffffff;
+    --surface-1: #f4f4f2;
+    --surface-0: #ececea;
+    --text-primary: #1a1a18;
+    --text-secondary: #5f5e5a;
+    --text-muted: #888780;
+    --text-danger: #791f1f;
+    --border: rgba(0,0,0,0.12);
+    --border-strong: rgba(0,0,0,0.22);
+    --radius: 8px;
+    --bg-accent: #E6F1FB;
+    --text-accent: #0C447C;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --surface-2: #232320;
+      --surface-1: #2c2c2a;
+      --surface-0: #1c1c1a;
+      --text-primary: #f1efe8;
+      --text-secondary: #b4b2a9;
+      --text-muted: #888780;
+      --text-danger: #f7c1c1;
+      --border: rgba(255,255,255,0.14);
+      --border-strong: rgba(255,255,255,0.24);
+      --bg-accent: #0C447C;
+      --text-accent: #E6F1FB;
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface-2: #232320;
+    --surface-1: #2c2c2a;
+    --surface-0: #1c1c1a;
+    --text-primary: #f1efe8;
+    --text-secondary: #b4b2a9;
+    --text-muted: #888780;
+    --text-danger: #f7c1c1;
+    --border: rgba(255,255,255,0.14);
+    --border-strong: rgba(255,255,255,0.24);
+    --bg-accent: #0C447C;
+    --text-accent: #E6F1FB;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--surface-0);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 24px 16px 48px;
+  }
+
+  .wrap {
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+
+  .sub {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0 0 24px;
+  }
+
+  .card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .field {
+    margin-bottom: 16px;
+  }
+
+  .field:last-child {
+    margin-bottom: 0;
+  }
+
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+
+  input[type="number"], select {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-strong);
+    background: var(--surface-1);
+    color: var(--text-primary);
+    font-size: 15px;
+    outline: none;
+  }
+
+  input[type="number"]:focus, select:focus {
+    border-color: var(--text-accent);
+  }
+
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .toggle-group {
+    display: flex;
+    gap: 8px;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    height: 40px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-strong);
+    background: var(--surface-1);
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .toggle-btn.active {
+    background: var(--bg-accent);
+    color: var(--text-accent);
+    border-color: var(--text-accent);
+    font-weight: 600;
+  }
+
+  .error-text {
+    font-size: 13px;
+    color: var(--text-danger);
+    margin-top: 6px;
+  }
+
+  .result-card {
+    background: var(--bg-accent);
+    border: none;
+    text-align: center;
+    padding: 24px 20px;
+  }
+
+  .result-label {
+    font-size: 13px;
+    color: var(--text-accent);
+    margin-bottom: 6px;
+  }
+
+  .result-value {
+    font-size: 34px;
+    font-weight: 700;
+    color: var(--text-accent);
+  }
+
+  .result-note {
+    font-size: 12px;
+    color: var(--text-accent);
+    opacity: 0.8;
+    margin-top: 6px;
+  }
+
+  .breakdown {
+    margin-top: 16px;
+    font-size: 13px;
+  }
+
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+
+  .breakdown-row:last-child {
+    border-bottom: none;
+  }
+
+  .breakdown-row span:last-child {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Loan repayment calculator</h1>
+  <p class="sub">Calculates the periodic repayment amount from NAF, term, rate, frequency and fees.</p>
+
+  <div class="card">
+    <div class="field">
+      <label for="naf">Net amount financed (NAF)</label>
+      <input type="number" id="naf" value="10000" min="0" step="0.01">
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label for="term">Loan term (years)</label>
+        <input type="number" id="term" value="5" min="0.1" step="0.1">
+      </div>
+      <div class="field">
+        <label for="totalTerm">Total term (years, optional)</label>
+        <input type="number" id="totalTerm" placeholder="Same as loan term" min="0.1" step="0.1">
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label for="rate">Annual interest rate (%)</label>
+        <input type="number" id="rate" value="9.95" min="0" step="0.01">
+      </div>
+      <div class="field">
+        <label for="upfrontFees">Upfront fees</label>
+        <input type="number" id="upfrontFees" value="0" min="0" step="0.01">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Payment frequency</label>
+      <div class="toggle-group" id="frequencyGroup">
+        <button type="button" class="toggle-btn active" data-value="Monthly">Monthly</button>
+        <button type="button" class="toggle-btn" data-value="Fortnightly">Fortnightly</button>
+        <button type="button" class="toggle-btn" data-value="Weekly">Weekly</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Payment holiday feature (PHF)</label>
+      <div class="toggle-group" id="phfGroup">
+        <button type="button" class="toggle-btn" data-value="No">No</button>
+        <button type="button" class="toggle-btn active" data-value="Yes">Yes</button>
+      </div>
+    </div>
+
+    <div id="errorMsg" class="error-text" style="display:none;"></div>
+  </div>
+
+  <div class="card result-card">
+    <div class="result-label">Repayment amount</div>
+    <div class="result-value" id="resultValue">–</div>
+    <div class="result-note" id="resultNote"></div>
+  </div>
+
+  <div class="card">
+    <div class="breakdown">
+      <div class="breakdown-row"><span>Total volume financed</span><span id="bdVolume">–</span></div>
+      <div class="breakdown-row"><span>Base monthly repayment</span><span id="bdBase">–</span></div>
+      <div class="breakdown-row"><span>Monthly fee added</span><span id="bdFee">–</span></div>
+      <div class="breakdown-row"><span>Total payments (term)</span><span id="bdPayments">–</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MONTHLY_FEES = 16.5;
+
+function calculateRepaymentAmount(naf, term, interestRate, frequency, phf, upfrontFees, totalTerm) {
+  if (totalTerm === null || totalTerm === undefined || totalTerm === '') {
+    totalTerm = term;
+  }
+
+  naf = parseFloat(naf);
+  term = parseFloat(term);
+  totalTerm = parseFloat(totalTerm);
+  interestRate = parseFloat(interestRate);
+  upfrontFees = parseFloat(upfrontFees);
+
+  const periodicRate = interestRate / 1200;
+  const totalPayments = term * 12;
+  const totalPaymentsWithHoliday = totalTerm * 12;
+
+  let totalVolume;
+  if (phf.toLowerCase() === 'yes') {
+    const deferredInterestOne = (naf + upfrontFees + MONTHLY_FEES) * periodicRate;
+    const totalAfterOneMonth = (naf + upfrontFees + MONTHLY_FEES) + deferredInterestOne;
+
+    const deferredInterestTwo = totalAfterOneMonth * periodicRate;
+    const totalAfterTwoMonth = totalAfterOneMonth + deferredInterestTwo;
+
+    const deferredInterestThree = totalAfterTwoMonth * periodicRate;
+    const totalAfterThreeMonth = totalAfterTwoMonth + deferredInterestThree;
+
+    totalVolume = totalAfterThreeMonth;
+  } else {
+    totalVolume = naf + upfrontFees;
+  }
+
+  let baseRepayment;
+  if (periodicRate === 0) {
+    baseRepayment = totalVolume / totalPayments;
+  } else {
+    baseRepayment = (
+      (totalVolume * periodicRate * Math.pow(1 + periodicRate, totalPaymentsWithHoliday)) *
+      totalPaymentsWithHoliday
+    ) / (
+      (Math.pow(1 + periodicRate, totalPaymentsWithHoliday) - 1) * totalPayments
+    );
+  }
+
+  let result;
+  if (frequency.toLowerCase() === 'monthly') {
+    result = baseRepayment + MONTHLY_FEES;
+  } else if (frequency.toLowerCase() === 'weekly') {
+    result = (baseRepayment + MONTHLY_FEES) / 4;
+  } else if (frequency.toLowerCase() === 'fortnightly') {
+    result = (baseRepayment + MONTHLY_FEES) / 2;
+  } else {
+    throw new Error("Frequency must be 'Monthly', 'Weekly', or 'Fortnightly'");
+  }
+
+  return {
+    result: Math.round(result * 100) / 100,
+    totalVolume: Math.round(totalVolume * 100) / 100,
+    baseRepayment: Math.round(baseRepayment * 100) / 100,
+    totalPayments: totalPayments
+  };
+}
+
+function fmtCurrency(n) {
+  return '$' + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+let frequency = 'Monthly';
+let phf = 'Yes';
+
+document.querySelectorAll('#frequencyGroup .toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#frequencyGroup .toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    frequency = btn.dataset.value;
+    recalc();
+  });
+});
+
+document.querySelectorAll('#phfGroup .toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#phfGroup .toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    phf = btn.dataset.value;
+    recalc();
+  });
+});
+
+['naf','term','totalTerm','rate','upfrontFees'].forEach(id => {
+  document.getElementById(id).addEventListener('input', recalc);
+});
+
+function recalc() {
+  const errorMsg = document.getElementById('errorMsg');
+  errorMsg.style.display = 'none';
+
+  const naf = document.getElementById('naf').value;
+  const term = document.getElementById('term').value;
+  const totalTermRaw = document.getElementById('totalTerm').value;
+  const rate = document.getElementById('rate').value;
+  const upfrontFees = document.getElementById('upfrontFees').value || 0;
+
+  if (naf === '' || term === '' || rate === '') {
+    document.getElementById('resultValue').textContent = '–';
+    document.getElementById('resultNote').textContent = '';
+    document.getElementById('bdVolume').textContent = '–';
+    document.getElementById('bdBase').textContent = '–';
+    document.getElementById('bdFee').textContent = '–';
+    document.getElementById('bdPayments').textContent = '–';
+    return;
+  }
+
+  try {
+    const naf_n = parseFloat(naf);
+    const term_n = parseFloat(term);
+    const rate_n = parseFloat(rate);
+
+    if (naf_n < 0 || term_n <= 0 || rate_n < 0) {
+      throw new Error('Enter positive values for NAF, term and rate.');
+    }
+
+    const out = calculateRepaymentAmount(naf, term, rate, frequency, phf, upfrontFees, totalTermRaw);
+
+    document.getElementById('resultValue').textContent = fmtCurrency(out.result);
+    document.getElementById('resultNote').textContent = frequency + ' repayment' + (phf === 'Yes' ? ' (payment holiday applied)' : '');
+
+    document.getElementById('bdVolume').textContent = fmtCurrency(out.totalVolume);
+    document.getElementById('bdBase').textContent = fmtCurrency(out.baseRepayment);
+    document.getElementById('bdFee').textContent = fmtCurrency(MONTHLY_FEES);
+    document.getElementById('bdPayments').textContent = out.totalPayments + ' months';
+  } catch (e) {
+    errorMsg.textContent = e.message;
+    errorMsg.style.display = 'block';
+    document.getElementById('resultValue').textContent = '–';
+    document.getElementById('resultNote').textContent = '';
+  }
+}
+
+recalc();
+</script>
+</body>
+</html>

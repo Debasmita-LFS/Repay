@@ -232,6 +232,11 @@
     </div>
 
     <div class="field">
+      <label for="monthlyFee">Monthly fee</label>
+      <input type="number" id="monthlyFee" value="16.5" min="0" step="0.01">
+    </div>
+
+    <div class="field">
       <label>Payment frequency</label>
       <div class="toggle-group" id="frequencyGroup">
         <button type="button" class="toggle-btn active" data-value="Monthly">Monthly</button>
@@ -268,9 +273,7 @@
 </div>
 
 <script>
-const MONTHLY_FEES = 16.5;
-
-function calculateRepaymentAmount(naf, term, interestRate, frequency, phf, upfrontFees, totalTerm) {
+function calculateRepaymentAmount(naf, term, interestRate, frequency, phf, upfrontFees, totalTerm, monthlyFee) {
   if (totalTerm === null || totalTerm === undefined || totalTerm === '') {
     totalTerm = term;
   }
@@ -280,6 +283,7 @@ function calculateRepaymentAmount(naf, term, interestRate, frequency, phf, upfro
   totalTerm = parseFloat(totalTerm);
   interestRate = parseFloat(interestRate);
   upfrontFees = parseFloat(upfrontFees);
+  monthlyFee = parseFloat(monthlyFee);
 
   const periodicRate = interestRate / 1200;
   const totalPayments = term * 12;
@@ -287,8 +291,8 @@ function calculateRepaymentAmount(naf, term, interestRate, frequency, phf, upfro
 
   let totalVolume;
   if (phf.toLowerCase() === 'yes') {
-    const deferredInterestOne = (naf + upfrontFees + MONTHLY_FEES) * periodicRate;
-    const totalAfterOneMonth = (naf + upfrontFees + MONTHLY_FEES) + deferredInterestOne;
+    const deferredInterestOne = (naf + upfrontFees + monthlyFee) * periodicRate;
+    const totalAfterOneMonth = (naf + upfrontFees + monthlyFee) + deferredInterestOne;
 
     const deferredInterestTwo = totalAfterOneMonth * periodicRate;
     const totalAfterTwoMonth = totalAfterOneMonth + deferredInterestTwo;
@@ -315,11 +319,11 @@ function calculateRepaymentAmount(naf, term, interestRate, frequency, phf, upfro
 
   let result;
   if (frequency.toLowerCase() === 'monthly') {
-    result = baseRepayment + MONTHLY_FEES;
+    result = baseRepayment + monthlyFee;
   } else if (frequency.toLowerCase() === 'weekly') {
-    result = (baseRepayment + MONTHLY_FEES) / 4;
+    result = (baseRepayment + monthlyFee) / 4;
   } else if (frequency.toLowerCase() === 'fortnightly') {
-    result = (baseRepayment + MONTHLY_FEES) / 2;
+    result = (baseRepayment + monthlyFee) / 2;
   } else {
     throw new Error("Frequency must be 'Monthly', 'Weekly', or 'Fortnightly'");
   }
@@ -357,7 +361,7 @@ document.querySelectorAll('#phfGroup .toggle-btn').forEach(btn => {
   });
 });
 
-['naf','term','totalTerm','rate','upfrontFees'].forEach(id => {
+['naf','term','totalTerm','rate','upfrontFees','monthlyFee'].forEach(id => {
   document.getElementById(id).addEventListener('input', recalc);
 });
 
@@ -370,6 +374,7 @@ function recalc() {
   const totalTermRaw = document.getElementById('totalTerm').value;
   const rate = document.getElementById('rate').value;
   const upfrontFees = document.getElementById('upfrontFees').value || 0;
+  const monthlyFee = document.getElementById('monthlyFee').value || 0;
 
   if (naf === '' || term === '' || rate === '') {
     document.getElementById('resultValue').textContent = '–';
@@ -390,14 +395,14 @@ function recalc() {
       throw new Error('Enter positive values for NAF, term and rate.');
     }
 
-    const out = calculateRepaymentAmount(naf, term, rate, frequency, phf, upfrontFees, totalTermRaw);
+    const out = calculateRepaymentAmount(naf, term, rate, frequency, phf, upfrontFees, totalTermRaw, monthlyFee);
 
     document.getElementById('resultValue').textContent = fmtCurrency(out.result);
     document.getElementById('resultNote').textContent = frequency + ' repayment' + (phf === 'Yes' ? ' (payment holiday applied)' : '');
 
     document.getElementById('bdVolume').textContent = fmtCurrency(out.totalVolume);
     document.getElementById('bdBase').textContent = fmtCurrency(out.baseRepayment);
-    document.getElementById('bdFee').textContent = fmtCurrency(MONTHLY_FEES);
+    document.getElementById('bdFee').textContent = fmtCurrency(parseFloat(monthlyFee));
     document.getElementById('bdPayments').textContent = out.totalPayments + ' months';
   } catch (e) {
     errorMsg.textContent = e.message;
